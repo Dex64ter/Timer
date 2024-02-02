@@ -248,4 +248,42 @@ export function App() {
 
   O BrowserRouter armazena a localização atual na barra de endereço do navegador usando URLs limpos e navega usando a pilha de histórico integrada do navegador.
 
-  
+## Layouts de Rotas
+
+  O assunto nessa parte é opcional pois não é necessário ter essa mesma organização de pastas. Entretanto, a criação do Layout é uma ajuda para evitar colocar o mesmo componente em vários outros componentes de página.
+
+  A biblioteca React Router Dom possui funcionalidades que permitem usar um ou mais layouts em uma ou mais páginas. Geralmente utilizamos essa ferramenta evitando repetições desnecessárias de componentes no nosso caso o `Header.tsx`.
+
+```js
+// /layouts/DefaultLayout.tsx
+
+import { Outlet } from "react-router-dom";
+import { Header } from "../components/Header";
+
+export function DefaultLayout() {
+  return (
+    <div>
+      <Header />
+      <Outlet />
+    </div>
+  );
+}
+```
+
+  O componente em questão `DefaultLayout.tsx` é um Layout usado na nossa aplicação. O `<Outlet/>` é um elemento do React Router que mostra onde as páginas dos caminhos devem ser integrados. Dessa forma, o `<Header/>` vai ser mostrado em todas as páginas da aplicação.
+
+  Dentro do `Router.tsx` colocamos mais um elemento `<Route>` ao redor dos outros elementos `<Route>` de cada página para configurar quais conjuntos de páginas possuirão o layout destacado.
+
+```js
+// Router.tsx
+// ...
+return (
+  <Routes>
+    <Route path='/' element={ <DefaultLayout/> }  >
+      <Route path='/' element={ <Home/> } />
+      <Route path='/history' element={ <History/> } />
+    </Route>
+  </Routes>
+);
+```
+
