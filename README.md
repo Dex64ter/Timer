@@ -1,6 +1,6 @@
 # Aprofundando em Hooks
 
-## Styled Components
+## Estrutura da Aplicação e Styled Components
 
   O Styled Components é uma biblioteca de CSS-in-JS que permite que a gente utilize o CSS dentro do JavaScript e em um formato parecido com os do React, adicionando muitas funcionalidades à estilização da nossa aplicação.
 
@@ -157,3 +157,95 @@ export function App() {
   Anteriormente tinhamos o fragment `<></>` por volta dos componentes, mas para que todo o projeto consiga utilizar os temas devemos colocar o componente `<ThemeProvider>` fornecido pelo _styled-components_.
 
   Já o `<GlobalStyles/>` pode ser usado dentro da aplicação em qualquer lugar, com isso as estilizações serão configuradas no projeto.
+
+## Tipagem de Temas
+
+  Algumas configurações do Styled Components não permite que acessemos todas ass variáveis quando exportadas, para isso criamos um arquivo de definição de tipos que tem como sufixo `.d.ts` presente na pasta **/@types**.
+
+  No arquivo `styled.d.ts` temos uma configuração padrão para definir os tipos das variáveis exportadas nos temas do styled-components do nosso projeto. Geralmente usamos isso para o styled-components e não é necessário memorizar a utilização desse arquivo, podemos usá-lo na maioria dos nossos projetos da mesma forma como está neste.
+
+```typescript
+import 'styled-components'
+import { defaultThemes } from '../styles/themes/default'
+
+type ThemeType = typeof defaultThemes;
+
+declare module 'styled-components' {
+  export interface DefaultTheme extends ThemeType {}
+}
+```
+
+  Essa coniguração permite acessar as variáveis mais facilmente em qualquer lugar do projeto.
+
+## React Router dom
+
+  Nessa parte do projeto, iniciaremos a utilização e aprendizado nas rotas de uma aplicação. Basicamente a capacidade de mudar de página em um site na web.
+
+  Para isso vamos utilizar a biblioteca mais famosa em construir rotas no react que é a React Router Dom. Mais informações de como utilizar pode-se acessar o links da [documentação](https://reactrouter.com/en/main)  e da introdução a ele na [w3 School](https://www.w3schools.com/react/react_router.asp).
+
+```terminal
+npm i react-router-dom
+
+yarn add react-router-dom
+```
+
+  Depois da instalação, recomenda-se criar uma pasta dentro do `/src` chamada __/pages__ `/src/pages`. Dentro dela criaremos os caminhos pelos quais a nossa aplicação percorrerá durante sua execução.
+
+  No nosso projeto criamos os componentes `Home.tsx` e `History.tsx`. Essa fase não é necessária, poderiam ser criados dentro do próprio App.tsx, mas por questão de melhor organização do projeto, optamos por deixar dessa forma.
+
+  ![Pasta Pages](/public/imgs/pasta-pages.png)
+
+  Agora para podermos acessá-los devemos configurar as "Routes" dentro do nosso App.tsx que é a raiz da nossa aplicação. Para isso temos duas opções, podemos criar e importar nossas ferramentas do react-router diretamente no componente `App.tsx` ou criar um componente a parte com a configuração e importações necessárias para acoplarmos ao `App.tsx` em seguida.
+
+  Por razões de organização, vamos para a última opção citada criando o arquivo Router.tsx que conterá a configuração dos caminhos da aplicação.
+
+```js
+// Router.tsx
+import { Routes, Route } from 'react-router-dom';
+
+import { Home } from './pages/Home';
+import { History } from './pages/History';
+ 
+export function Router() {
+
+  return (
+    <Routes>
+      <Route path='/' element={ <Home/> } />
+      <Route path='/history' element={ <History/> } />
+    </Routes>
+  );
+}
+```
+
+  O **Routes** é uma ferramenta utilizada para guardar o conjunto de componentes **Route** onde cada um deles possuirá um caminho da aplicação.
+
+  Cada `<Route>` possui as propriedades `path=` que indica o caminho da url para aquela rota e `element=` que indica qual componente será mostrado naquela rota.
+
+  A execução dessas rotas será feita dentro do `App.tsx` com o componente **Router** importado do aquivo criado e com o componente `BrowserRouter` importado da biblioteca react-router-dom.
+
+```js
+// App.tsx
+import { ThemeProvider } from 'styled-components';
+import { BrowserRouter } from 'react-router-dom';
+import { defaultThemes } from './styles/themes/default';
+import { GlobalStyles } from './styles/global';
+import { Router } from './Router';
+
+export function App() {
+
+  return (
+    <ThemeProvider theme={defaultThemes}>
+      <BrowserRouter>
+        <Router />
+      </BrowserRouter>
+      <GlobalStyles/>
+    </ThemeProvider>
+  )
+}
+```
+
+  Os componentes citados não são mostrados em tela pois eles são _**Context Providers**_ então eles não estão em volta de todos os outros compontes para mostrar algo em tela mas sim para dar a eles informações sobre o contexto em que eles estão inseridos.
+
+  O BrowserRouter armazena a localização atual na barra de endereço do navegador usando URLs limpos e navega usando a pilha de histórico integrada do navegador.
+
+  
