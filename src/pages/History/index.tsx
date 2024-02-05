@@ -57,9 +57,6 @@ export function History() {
               </td>
             </tr>
           </tbody>
-          <tr>
-
-          </tr>
         </table>
       </HistoryList>
     </HistoryContainer>

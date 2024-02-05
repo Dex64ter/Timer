@@ -287,3 +287,227 @@ return (
 );
 ```
 
+## Header & Layout
+
+  A partir daqui, vamos organizar os componentes criados em pastas com seus nomes. Cada um dos componentes estará presente dentro de uma pasta com o nome do componente, dentro dessa pasta temos um arquivo `index.tsx` e outro `styles.tsx`.
+
+  ![Organização de pastas dos componentes da aplicação](./public/imgs/pastas-dos-componentes.png)
+
+  A organização dessa forma auxilia na implementação de novas features em cada componente. Cada um deles pode ter vários outros arquivos de configuração, não somente de estilo.
+
+  ### Layout
+  Na estilização do nosso __DefaultLayout__ criamos um style componente `<DefaultLayoutContainer/>` e a peculiaridade da sua estilização é o uso do `calc()` no valor da propriedade _height_.
+
+```css
+/*
+  DefaultLayout/styles.tsx
+*/
+height: calc(100vh - 7rem);
+```
+
+  O uso do __height__ com `calc()` é útil para usar todo o espaço em tela sem precisar de uma scrollbar.
+
+  ### Header
+  Na criação do Header, segundo o design, colocamos uma logo de um lado da aplicação e um menu de navegação do outro lado. Para estilizarmos todas as tags e elementos, criamos um styled-component chamado `<HeaderContainer/>`.
+
+```js
+// Header/index.tsx
+import { HeaderContainer } from "./styles";
+import { Scroll, Timer } from 'phosphor-react'
+import Logo from '../../assets/Logo.svg'
+
+export function Header(){
+  return (
+    
+  <HeaderContainer>
+    <img src={Logo} alt="Logo com dois triângulos de lado sobrepostos" />
+    <nav>
+      <a href="/" title="Timer">
+        <Timer size={24} />
+      </a>
+      <a href="/history" title="histórico">
+        <Scroll size={24} />
+      </a>
+    </nav>
+  </HeaderContainer>
+  );
+}
+```
+  A imagem da Logo foi exportaa do figma como ___*.svg*___ e os ícones dentro das âncoras vieram da biblioteca [Phosphor React](https://phosphoricons.com). As âncoras possuem proprieades _title_ por acessibiliade, geralmente em links que possuem apenas imagens é útil colocarmos um título para o usuário saber o que ou para onde o link o levará.
+
+  A biblioteca react-douter-dom possui um componente muito útil que usamos na nossa aplicação e que pode ser usado em âncoras de navegação como essas dentro do `Header` é o componente `NavLink`.
+
+```js
+import { NavLink } from "react-router-dom";
+ 
+export function Header() {
+  return (
+    <HeaderContainer>
+      <img src={Logo} alt="Logo com dois triângulos de lado sobrepostos" />
+      <nav>
+        <NavLink to="/" title="Timer">
+          <Timer size={24} />
+        </NavLink>
+        <NavLink to="/history" title="histórico">
+          <Scroll size={24} />
+        </NavLink>
+      </nav>
+    </HeaderContainer>
+  );
+}
+```
+
+  Esse componente funciona como uma tag `<a>` só que dentro do processo de rotas do react-router-dom, ao invés de `href` usa-se `to`.
+  
+  No browser, ao serem clicados para mudança de página, o componente clicado ganha uma classe `active` que pode ser instanciada pelo arquivo de estilos do componente.
+
+  ## Página: Home
+  Na estruturação da página Home foram criados 7 diferentes componentes do styled-componentes que estão implementados dentro do arquivo `Home/styles.tsx` da pasta do componente `/Home/`.
+
+  Nessa nossa página principal, a estrutura `<form/>` receberá as novas tarefas e o tempo que vamos dar para cada tarefa no Timer.
+
+  No começo da estrutura Form temos os componentes `<FormContainer>`, `<CountDownContainer>` e `<StartCountDownButton>` que organizam toda a estrutura da box do Timer.
+
+  Duas estruturas são muito importantes nessa página. Dentro de `<FormContainer/>` temos o componente `<TaskInput/>` que é um input do tipo "text" e na nossa aplicação é interessante ter sugestões para o usuário escrever.
+
+```js
+// Home/index.tsx
+return (
+  // ...
+  <label htmlFor="task" >Vou trabalhar em</label>
+  <TaskInput id="task" placeholder="Dê um nome para seu projeto" list="task-suggestions"/>
+
+  <datalist id="task-suggestions">
+    <option value="Trabalhar no projeto" />
+    <option value="Estudar tecnologia" />
+    <option value="Trabalhar no TCC" />
+  </datalist>
+  // ...
+)
+```
+A tag `<datalist>` nos da a possibilidade de adicionar opções com as tags `<option value=?>` para os inputs do tipo "text".
+
+  A próxima estrutura interessante é o componente `<MinutesAmountInput>` que é um input do tipo "number" o qual podemos colocar diferentes propriedades nele como é mostrado no código dele.
+
+```js
+// Home/index.tsx
+return (
+  // ...
+  <label htmlFor="minutesAmount">durante</label>
+  <MinutesAmountInput
+    id="minutesAmount"
+    type="number"
+    placeholder="00"
+    step={5}
+    max={60}
+    min={0}
+    
+  />
+  <span>minutos</span>
+  // ...
+)
+```
+Todas as propriedades foram úteis para colocar um limite de valor para a entrada de dados e um mínimo.
+
+  ### estilizações e herança
+  A parte interessante nas estilizações da página Home podemos citar o uso de herança entre os componentes usados na página. Dois ou mais componentes podem usar outro como base, dessa forma usando todas as características dele com adição das próprias.
+
+```js
+
+const BaseInput = styled.input`
+  background: transparent;
+  height: 2.5rem;
+  border: 0;
+  border-bottom: 2px solid ${(props) => props.theme['gray-500']};
+
+  ...
+  
+`; 
+
+export const TaskInput = styled(BaseInput)`
+  flex: 1;
+
+  &::-webkit-calendar-picker-indicator{
+    display: none !important;
+  }
+`;
+
+export const MinutesAmountInput = styled(BaseInput)`
+  width: 4rem;
+`;
+```
+Foi usado o componente `BaseInput`, que não é exportado, ou seja, só poderá ser usado dentro daquele arquivo, como "base" para outros componentes do mesmo tipo. No nosso caso, criamos os componentes exportados e ao invés de citar o tipo de estrutura dele, nós colocamos `styled([nome do componente base])` para recebermos as características e tipos de outro componente como base para outro.
+
+  ## Página: History
+  Na página de histórico temos uma estruturação mais simples que a Home. Basicamente, um título e uma tabela com uma div por volta.
+
+```js
+export function History() {
+  return (
+    <HistoryContainer>
+      <h1>Meu histórico</h1>
+
+      <HistoryList>
+        <table>
+          <thead>
+            <tr>
+              <th>Tarefa</th>
+              <th>Duração</th>
+              <th>Início</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tarefa</td>
+              <td>25 minutos</td>
+              <td>Há 2 meses</td>
+              <td>
+                <Status statusColor="yellow">
+                  Em andamento
+                </Status>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </HistoryList>
+    <HistoryContainer>
+  )
+}
+```
+  O `HistoryList` é um componente styled o tipo `div` e ele será útil por conta da table em versões mobile. A table em si não fica muito legal em versões mobile então a div ao redor dela ajuda a melhorar a sua visualização colocando scroll na tabela.
+
+  Na estilização do `<History/>` temos algumas coisa que gosto de enfatizar. O primeiro é a propriedade `border-collapse` que ajuda na amostragem de tabelas quando formos melhorar a sua visualização de bordas, caso tenha duas bordas muito próximas, essa propriedade deixa apenas uma borda entre as duas estruturas.
+
+  Uma outra parte importante é a parte do `Status` que nos é muito bom e ajuda a ver porquê o styled-components é tão útil.
+
+```js
+const STATUS_COLOR = {
+  yellow: 'yellow-500',
+  green: 'green-500',
+  red: 'red-500',
+} as const
+
+interface StatusProps {
+  statusColor: keyof typeof STATUS_COLOR
+}
+
+export const Status = styled.span<StatusProps>`
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+
+  &::before {
+    content: '';
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background-color: ${(props) => props.theme[STATUS_COLOR[props.statusColor]]};
+  }
+`;
+```
+Na implementação do componente __Status__ temos a ferramente `::before` que cria um elemento anteriormente ao conteúdo daquele componente específico. O elemento criado será a cor da situação de uma tarefa no histórico.
+
+  Nós também podemos passar propriedades para o `Status`. Como no exemplo, a interface nos cria a propriedade "statusColor" que nos diz qual cor vamos usar.
+
+  O objeto `STATUS_COLOR` nos dá um mapeamento das cores ou dos valores das cores que estamos usando, por conta do Typescript devemos usar o _`as const`_ para reitificarmos que o objeto possui valores constantes descritos nele, e com esse objeto nos estanciamos a cor lá no background-color do elemento `::before`.
