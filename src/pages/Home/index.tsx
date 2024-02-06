@@ -20,8 +20,17 @@ const newCycleFormSchema = zod.object({
     .max(60, 'O ciclo precisa ser de no máximo 60 minutos')
 })
 
+// interface NewCycleFormData {
+//   task: string,
+//   minutesAmount: number
+// }
+
+// sempre que eu quero trazer uma variável javascript para o typescript usamos o typeof e o nome d variável;
+
+type NewCycleFormData = zod.infer<typeof newCycleFormSchema>
+
 export function Home() {
-  const { register, handleSubmit, watch, reset } = useForm({
+  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleFormSchema),
     defaultValues: {
       task: '',
@@ -29,7 +38,7 @@ export function Home() {
     }
   });
 
-  function onHandleSubmit(data: object) {
+  function onHandleSubmit(data: NewCycleFormData) {
     console.log(data)
     reset();
   }
