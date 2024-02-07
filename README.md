@@ -176,7 +176,7 @@ declare module 'styled-components' {
 ```
 
   Essa coniguração permite acessar as variáveis mais facilmente em qualquer lugar do projeto.
-
+# Páginas e Rotas
 ## React Router dom
 
   Nessa parte do projeto, iniciaremos a utilização e aprendizado nas rotas de uma aplicação. Basicamente a capacidade de mudar de página em um site na web.
@@ -511,3 +511,236 @@ Na implementação do componente __Status__ temos a ferramente `::before` que cr
   Nós também podemos passar propriedades para o `Status`. Como no exemplo, a interface nos cria a propriedade "statusColor" que nos diz qual cor vamos usar.
 
   O objeto `STATUS_COLOR` nos dá um mapeamento das cores ou dos valores das cores que estamos usando, por conta do Typescript devemos usar o _`as const`_ para reitificarmos que o objeto possui valores constantes descritos nele, e com esse objeto nos estanciamos a cor lá no background-color do elemento `::before`.
+
+  # Formulários
+
+  ## Controlled e Uncontrolled
+  Nessa parte vamos entender as diferenças entre componentes controlados e componentes não controlados. É muito importante entender esses termos pois eles nos ajudam a entender como o React funciona
+
+  ### Controlled
+  Controlled nada mais é do que mantermos em tempo real o estado da informação que o usuário insere na nossa aplicação dentro de uma variável do nosso componente, ou seja, sempre que ele alterar o valor da entrada, o estado é alterado contendo esse novo valor tendo sempre atualizado.
+
+  Há o monitoramento de cada digitação do usuário para salvar em um estado, isso nos dá fácil acesso aos valores em tempo real e facilita alterar a interface como um todo baseado no valor das entradas do usuário. Toda essa funcionalidade traz mais fluidez para as aplicações.
+
+  Entretanto, no react, sempre que alteramos/alteramos um estado provocamos uma nova renderização. Basicamente, o react precisa recalcular todo o componente baseado no estado que foi mudado. Não necessariamente é um processo lento, mas se houver interfaces com muita complexidade com diversas informações essa re-renderização pode sim se tornar um gargalo.
+
+  ### Uncontrolled
+  Uncontrolled é um método em que não monitoramos o valor digitado em tempo real. Ao contrário do **controlled** esse método não trará tanta fluidez mas melhorará em performance nas interfaces com muitas informações ou muitas entradas de dados.
+
+  Geralmente usamos métodos conhecidos do javascript para recuperar os valores dos campos, como o uso do _"event.target.value"_ que é recuperado somente na submissão de um formulário, no envio de um input, na alteração de foco, etc.
+
+  ## React Hook Form
+  A react-hook-form é uma biblioteca na qual nos ajuda a usar tanto o **Controlled** como o **Uncontrolled**, o melhor dos dois mundos, ela é pensada principalmente na performance da aplicação.
+
+  Com ela temos a capacidade de isolar novas renderizações de componentes, o que leva a um melhor desempenho em sua página ou aplicativo.
+
+  Para iniciarmos o seu uso primeiro devemos importar a função `useForm` dentro da nossa página `Home/index.tsx` onde está o nosso formulário.
+
+```js
+// Home/index.tsx
+// ...
+import { useForm } from 'react-hook-form';
+// ...
+
+export function Home() {
+  const { register, handleSubmit, watch } = useForm();
+
+  function onHandleSubmit(data: any) {
+    console.log(data)
+  }
+
+  const task = watch("task");
+  const isSubmitDisabled = !task;
+
+  return (
+    // ...
+    <HomeContainer>
+      <form onSubmit={handleSubmit(onHandleSubmit)} action="">
+        <FormContainer>
+          <label htmlFor="task">Vou trabalhar em</label>
+          <TaskInput
+            id="task"
+            placeholder="Dê um nome para seu projeto"
+            list="task-suggestions"
+            {...register("task") }
+          />
+
+          {
+            /* 
+            
+            ... 
+            
+            */
+          }
+
+          <MinutesAmountInput
+            id="minutesAmount"
+            type="number"
+            placeholder="00"
+            step={5}
+            max={60}
+            min={0}
+            {...register("minutesAmount", {valueAsNumber: true}) }
+          />
+
+          {
+            /* 
+            
+            ... 
+            
+            */
+          }
+
+          <StartCountDownButton disabled={isSubmitDisabled} type="submit">
+            <Play size={24} />
+            Começar
+          </StartCountDownButton>
+        </FormContainer>
+      </form>
+  );
+}
+```
+  Três importantes funções são desestruturadas do hook `useForm()`, a **register**, a **handleSubmit** e a **watch**. Cada uma dessa funções nos ajudam no uso de Controlled e Uncontrolled.
+
+  O `register()` é usado dentro de cada input do nosso formulário pois ele funciona como um. Ele nada mais é do que uma função que dentro dele possui todos os métodos de um input normal, além de diversos métodos de validação, por essa razão, utilizamos o operador _spread_ `...` antes da função para recuperarmos todos esses métodos para o input em questão.
+
+  `{...register("Nome_do_input") }`
+
+  Dentro dos parâmetros do `register` colocamos o nome desejado do input, não fazendo mais necessário o uso da propriedade `name=`, além disso, como é mostrado na entrada de `<MinutesAmountInput/>`, podemos colocar um objeto de configurações para passarmos o valor da maneira que desejarmos que no caso dessa entrada foi passar como um número porque como padrão ele aparece como string.
+
+  `{...register("minutesAmount", {valueAsNumber: true}) }`
+
+  O `handleSubmit` é uma função usada na submissão do formulário que recebe outra função como parâmetro.
+  
+  ```
+  function onHandleSubmit(data: any) {
+    console.log(data)
+  }
+
+  <form onSubmit={handleSubmit(onHandleSubmit)} action="">
+  ``` 
+
+  Essa função como parâmetro receberá os dados dos _registers_ dentro de cada input.
+
+  Até agora foram mostrados métodos que utilizam Uncontrolled para verificar os dados. A função `watch` é a forma Controlled de monitorar os dados, monitorando uma variável em tempo real poderemos alterar em tempo real componentes da interface, o que foi o caso do botão de submissão e sua propriedade `disabled`.
+
+  `const task = watch("task");`
+
+  Recuperamos o estado do input com o nome "task" dado pelo `register` e passamos essa variável para uma variável auxiliar para melhorar a legibilidade do código.
+
+  ```
+  const task = watch("task");
+  const isSubmitDisabled = !task;
+  ...
+  <StartCountDownButton disabled={isSubmitDisabled} type="submit">
+  ```
+
+  ## Validando Formulários
+  Por padrão o React Hook Form não traz nada de validação, ele prefere se manter mais enxuto e se utilizar de outras bibliotecas muito boas integradas a ele.
+
+  Uma das que vamos utilizar nesse projeto é a 'zod' pois ela traz um pouco mais de integração com typescript. Para usarmos basta instalar a biblioteca `@hookform/resolvers` pelo instalador de pacotes.
+
+`npm i @hookform/resolvers` 
+
+  Dentro do hook `useForm` podemos criar um objeto de configuração e uma de suas propriedades é o `resolver:` que será o local em que vamos inserir a função de validação `zodResolver`.
+
+```ts
+// Home/index.tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as zod from 'zod';
+
+const newCycleFormSchema = zod.object({
+  task: zod.string().min(1, 'Informe a tarefa'),
+  minutesAmount: zod
+    .number()
+    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos')
+    .max(60, 'O ciclo precisa ser de no máximo 60 minutos')
+})
+
+// ...
+
+export function Home() {
+  const { register, handleSubmit, watch, reset } = useForm({
+    resolver: zodResolver(newCycleFormSchema),
+  });
+  // ...
+}
+```
+
+  A variável de validação `newCycleFormSchema` nos mostra a configuração do zod na aplicação. Vamos validar um objeto, pois a resposta do `handleSubmit` é um objeto, e dentro desse objeto integramos quais tipos de dados e quais validações queremos verificar neles, como mínimo de caracteres, máximo de caracteres, valor mínimo, tipo de dado, etc.
+
+  É possível adicionar uma mensagem de erro caso a validação esteja incorreta.
+
+  ```js
+  task: zod.string().min(1, 'Informe a tarefa'),
+  ```
+
+  ## Typescript no formulário
+  Aqui vamos apenas melhorar a integração do formulário com typescript.
+
+  Nesse caso, vamos estipular um tipo para a saída da submissão do formulário. Podemos adicionar uma interface e colocar no nosso data como sendo o tipo desse dado.
+
+```ts
+interface NewCycleFormData {
+  task: string,
+  minutesAmount: number
+}
+
+// ...
+
+function onHandleSubmit(data: NewCycleFormData) {
+  console.log(data)
+  reset();
+}
+
+// ...
+```
+
+  Contudo, uma coisa interessante que podemos utilizar é uma das propriedades de configuração que podemos passar para o `useForm({})`, o `defaultValues:` e ela traz a possibildidade da gente passar qual o valor inicial de cada campo e é isso que fazemos.
+
+  Para que identifiquemos quais campos o react-hook-form possui, que no nosso caso é o campo _task_ e _minutesAmount_, podemos colocar um generic `<>` para ele.
+
+```ts
+export function Home() {
+  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
+    resolver: zodResolver(newCycleFormSchema),
+    defaultValues: {
+      task: '',
+      minutesAmount: 0
+    }
+  });
+// ...
+}
+```
+
+O Zod possui um método que extrai a tipagem de uma variável de dentro do esquema de validação com a função `.infer<typeof NewCycloFormData>` e passamos essa tipagem para as nossas variáveis ao invés da interface.
+
+```ts
+type NewCycleFormData = zod.infer<typeof newCycleFormSchema>
+```
+
+  Usando a interface também está certo, essa é só mais uma forma de ser feito e que fica bem legal na aplicação.
+
+  Uma outra função importante que podemos utilizar é a função `reset()` do `useForm()`. Ela por padrão volta os valores dos inputs implementados para os valores padrão descritos anteriormente. Basta usá-la junto da função de submissão do formulário.
+
+```ts
+const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
+  resolver: zodResolver(newCycleFormSchema),
+  defaultValues: {
+    task: '',
+    minutesAmount: 0
+  }
+});
+
+//...
+
+function onHandleSubmit(data: NewCycleFormData) {
+  console.log(data)
+  reset();
+}
+
+// ...
+```
+
+  

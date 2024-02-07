@@ -57,7 +57,7 @@ export function Home() {
             list="task-suggestions"
             {...register("task") }
           />
-
+          
           <datalist id="task-suggestions">
             <option value="Trabalhar no projeto" />
             <option value="Estudar tecnologia" />
