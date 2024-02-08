@@ -1,29 +1,12 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as zod from 'zod';
 import { FormContainer, TaskInput, MinutesAmountInput } from './styles';
-
-const newCycleFormSchema = zod.object({
-  task: zod.string().min(1, 'Informe a tarefa'),
-  minutesAmount: zod
-    .number()
-    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos')
-    .max(60, 'O ciclo precisa ser de no máximo 60 minutos')
-})
-
-// sempre que eu quero trazer uma variável javascript para o typescript usamos o typeof e o nome d variável;
-
-type NewCycleFormData = zod.infer<typeof newCycleFormSchema>
+import { useContext } from 'react';
+import { CycleContext } from '..';
+import { useFormContext } from 'react-hook-form';
 
 export function NewCycleForm() {
-  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
-    resolver: zodResolver(newCycleFormSchema),
-    defaultValues: {
-      task: '',
-      minutesAmount: 0
-    }
-  });
-
+  const { activeCycle } = useContext(CycleContext)
+  const { register } = useFormContext();
+  
   return (
     <FormContainer>
       <label htmlFor="task">Vou trabalhar em</label>
