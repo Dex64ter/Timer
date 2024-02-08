@@ -744,4 +744,54 @@ function onHandleSubmit(data: NewCycleFormData) {
 ```
 
   # Funcionalidades da Aplicação
-  
+  # Contexto no React
+  Página exemplo para entender como funciona o Context no React:
+
+```js
+import { useContext, createContext, useState } from 'react';
+
+const CycleContext = createContext({} as any)
+
+function NewCycleForm() {
+  const { activeCycle, setActiveCycle  } = useContext(CycleContext);
+
+  return (
+    <div>
+      <h1>
+        NewCycleForm { activeCycle }
+      </h1>
+      <button
+        onClick={() => {
+          setActiveCycle(5)
+        }}
+      >
+        Mudar Context
+      </button>
+
+    </div>
+      
+  )
+}
+
+function Countdown() {
+  // Form de coletar o valor da variável dentro do contexxto
+  const { activeCycle} = useContext(CycleContext) 
+
+  return (
+    <h1>Countdown { activeCycle }</h1>
+  )
+}
+
+export function Home() {
+  const [ activeCycle, setActiveCycle ] = useState(0);
+
+  return (
+    <CycleContext.Provider value={{activeCycle, setActiveCycle}}>
+      <div>
+        <Countdown />
+        <NewCycleForm />
+      </div>
+    </CycleContext.Provider>
+  )
+}
+```
