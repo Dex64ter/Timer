@@ -743,4 +743,5 @@ function onHandleSubmit(data: NewCycleFormData) {
 // ...
 ```
 
+  # Funcionalidades da Aplicação
   
