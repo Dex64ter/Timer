@@ -744,8 +744,372 @@ function onHandleSubmit(data: NewCycleFormData) {
 ```
 
   # Funcionalidades da Aplicação
+  ## Iniciando um novo Ciclo
+  Primeiro de tudo, no typescript nós precisamos dizer que formato cada ciclo possui. Dessa forma, teremos uma interface com as propriedades de cada ciclo, chamada `Cycle` e dela teremos um id para cada um dos ciclos.
+
+```ts
+// ./Home/index.tsx
+interface Cycle {
+  id: string,
+  task: string,
+  minutesAmount: number
+}
+```
+
+  Dentro do nosso componente, criaremos uma variável com useState que guardará uma lista de ciclos, para que ele receba uma lista com aquele tipo colocamos um _generic_ com o _tipo_ da lista junto de "[]"
+  ```ts
+  const [cycles, setCycles] = useState<Cycle[]>([])
+  ```
+  Dessa forma estaremos iniciando uma lista de ciclos.
+  
+  Na nossa função de submissão do formulário `onHandleSubmit()`, nós recebemos os valores do ciclo atual e o adicionamos a lista de ciclos através de uma closure, dessa forma evitamos demais erros no nosso código.
+
+```ts
+// ./Home/index.tsx
+
+// ...
+
+function onHandleSubmit(data: NewCycleFormData) {
+  
+  const newCycle: Cycle = {
+    id: String(new Date().getTime()),
+    task: data.task,
+    minutesAmount: data.minutesAmount
+  }
+
+  setCycles((state) => [...cycles, newCycle])
+  reset();
+}
+
+// ...
+```
+  Uma melhor adaptação que fizemos para a aplicação é a criação de mais uma variável para recuperar o _id_ do ciclo que está em ndamento no momento. Isso nos será útil futuramente caso a gente queira verificar a duração do ciclo, se ele já terminou e monitorar o tempo dele. Nós setamos ela logo ao final da adição do novo ciclo a lista de ciclos.
+
+```tsx
+// ./Home/index.tsx
+const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
+// ...
+function onHandleSubmit(data: NewCycleFormData) {
+  
+  const id = String(new Date().getTime()),
+
+  const newCycle: Cycle = {
+    id,
+    task: data.task,
+    minutesAmount: data.minutesAmount
+  }
+
+  setCycles((state) => [...cycles, newCycle])
+  setActiveCycleId(id)
+  reset();
+}
+```
+No generic da criação da nova variável acima, temos o tipo string | null, pois nem sempre existirá um ciclo em andamento.
+
+  Para recuperar o cyclo completo que está ativo e não somente seu id é muito simples. Cria-se uma nova variável que percorre toda a lista de ciclos e recupera aquele que possui o mesmo id do ciclo atual.
+
+```ts
+const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
+```
+
+  ## Criando Countdown
+  Iniciaremos a contagem regressiva de cada ciclo nessa parte. Aqui criamos diversas variáveis para condicionar a contagem regressiva para segundos.
+
+  Primeiro criamos uma variável que conte a quantidade de segundos que já se passaram.
+
+```ts
+const [amountSecondsPassed, setAmountSecondsPassed] = useState(0);
+```
+  Em seguida, criamos uma variável para contar quantos segundos serão contados e outra para verificar quantos segundos faltam em tempo real.
+
+  Para usar os valores dos segundos para mostrar em tela, basta usarmos a quantidade de segundos que falta atualmente e aproximamos para baixo usando o `Math.floor()` do javascript. Os segundos que sobram podemos recupera-los com o operador de resto `valor % 60`.
+
+```ts
+// ./Home/index.tsx
+const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60;
+const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0;
+
+const minutesAmount = Math.floor(currentSeconds / 60);
+const secondsAmount = currentSeconds % 60;
+
+const minutes = String(minutesAmount).padStart(2,"0");
+const seconds = String(secondsAmount).padStart(2,"0");
+```
+No fim, passamos o valor de _minutesAmount_ e _secondsAmount_ para string com duas casas sendo que os espaços em branco serão preenchidos por "0" usando a função `.padStart()` de String do _js_.
+
+  Para mostrar em tela, basta abrir "{}" e colocar cada variável (minutes, seconds) dentro delas com a posição de cada número.
+
+  ## O hook useEffect
+  O useEffect é um hook do React criado com o objetivo de monitorar mudanças em uma ou mais variáveis independente da origem e sempre que elas são alteradas ele repete o seu código.
+
+```ts
+// Formato padrão do useEffect
+useEffect(() => {}, [])
+```
+  O primeiro parâmetro é uma função que será executado em dois momentos. O primeiro, assim que a página ou componente carrega pela primeira vez, segundo momento é quando qualquer variável dentro do array que ele tem como segundo parâmetro é alterada.
+
+  Caso não tenha nenhuma variável no array de dependências, o useEffect() executará uma única vez. Isso é ótimo geralmente pra chamadas a API.
+
+  Agora, um caso muito importante ao usar discriminadamente o `useEffect()` é que se formos usa-lo para atualizar o valor de um estado em que esse estado depende de outras informações do componente, essa variável não necessariamente precisa ser um estado e não precisariamos usar o useEffect, basta criar uma variável com o mesmo valor dela.
+
+  ## Reduzindo Countdown
+  Reduzir uma contagem geralmente iremos prezar por usar a função `setInterval(() => {}, 1000)` que chama uma função a cada uma quantidade específica em milisegundos. Essa é uma abordagem correta de ser feita, a qual usaremos dentro de um `useEffect()`.
+
+  Antes de tudo, para que a contagem funcione sem erros, precisamos adicionar mais uma propriedade a `startDate` que nos dá a data em que o ciclo é criado.
+
+  Já dentro do nosso `useEffect()` dentro da Home vamos iniciar um setInterval e a utilização da variável que conta quantos segundos já se passaram.
+
+  Para monitorar a passagem do tempo, o setInterval pode ser um pouco impreciso, por essa razão, vamos usar a função `differenceInSeconds()` da biblioteca _date-fns_ para comparar a data de início do ciclo com a data atual em tempo real em segundos.
+
+```js
+// ./Home/index.tsx
+import { differenceInSeconds } from 'date-fns';
+ 
+  // ...
+
+useEffect(() => {
+  if (activeCycle) {
+    setInterval(() => {
+      setAmountSecondsPassed(
+        differenceInSeconds(new Date(), activeCycle.startDate),
+      )
+    }, 1000)
+  }
+}, [activeCycle])
+```
+
+  Ao chegar nessa parte da implementação a contagem regressiva já está em funcionamento, entretanto pode estar ocorrendo alguns bugs como ao aicionar novo ciclo que não exclui o anterior de continuar executando.
+
+  Também podemos achar o bug do estado de `amountSecondsPassed` que não é resetado para 0 no início do próximo ciclo.
+
+  Para isso, vamos reiniciar o estado da variável `amountSecondsPassed` ao se criar um novo ciclo e também reiniciar o intervalo que criamos dentro do nosso `useEffect()`.
+
+```ts
+// ./Home/index.tsx
+
+// ...
+
+useEffect(() => {
+  let interval: number;
+
+  if (activeCycle) {
+    interval = setInterval(() => {
+      setAmountSecondsPassed(
+        differenceInSeconds(new Date(), activeCycle.startDate),
+      )
+    }, 1000)
+  }
+
+  return () => {
+    clearInterval(interval)
+  }
+}, [activeCycle])
+
+function handleCreateNewCycle(data: NewCycleFormData) {
+  const id = String(new Date().getTime());
+
+  const newCycle: Cycle = {
+    id,
+    task: data.task,
+    minutesAmount: data.minutesAmount,
+    startDate: new Date()
+  }
+
+  setCycles((state) => [...state, newCycle])
+  setActiveCycleId(id);
+  setAmountSecondsPassed();
+
+  reset()
+}
+
+``` 
+  Dentro da função de criação de um novo ciclo eu reseto a contagem de segundos contados pelo nosso estado. Junto disso, dentro do `useEffect` eu passo o intervalo para uma variável e uso o retorno do hook para ativar a função `clearInterval()` para "resetar" o `setInterval` criado anteriormente.
+
+  Algo que ainda não foi citado aqui e que é muito interessante é que o useEffect possui um "return", que obrigatoriamente é uma função, nela podemos colocar algo que nos diga se queremos limpar o que foi feito no useEffect antes de executá-lo novamente.
+
+  ## Mudando title da página
+  Essa é só uma parte legal da aplicação que é a mudança no title para seguir a contagem do timer quando o usuário não estiver na página.
+
+```ts
+// ./Home/index.tsx
+
+// ...
+
+useEffect(() => {
+  if(activeCycle) {
+    document.title = `${minutes}:${seconds}`;
+  }
+}, [minutes, seconds, activeCycle])
+```
+
+  ## Interromper ciclo
+  Nessa parte da aplicação, precisamos interromper um ciclo ativo. Para isso, vamos começar com a mudança no botão de início de um novo ciclo.
+
+  Sendo assim, já vamos criar um novo componente de estilização no styled-components chamado `StopCountdownButton` que possuirá algumas características do botão de início com mudança apenas nas cores de fundo de de hover.
+
+  Como ambos os botões possuem características semelhantes, nós podemos criar um componente base para os dois como já foi visto antes.
+
+```ts
+// ./Home/styles.ts
+
+// ...
+
+const BaseCountDownButton = styled.button`
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 1rem;
+
+  // ...
+
+`;
+
+export const StartCountDownButton = styled(BaseCountDownButton)`
+  background: ${(props) => props.theme['green-500']};
+
+  &:not(:disabled):hover {
+    background: ${(props => props.theme['green-700'])};
+  }
+`;
+
+export const StopCountDownButton = styled(BaseCountDownButton)`
+  background: ${(props) => props.theme['red-500']};
+
+  &:not(:disabled):hover {
+    background: ${(props => props.theme['red-700'])};
+  }
+`;
+```
+
+  Usando o componente dentro da Home vamos fazer uma renderização condicional para quando tiver um ciclo ativo, aparecer o botão de interrupção e quando não tiver, aparecer o botão de início de ciclo.
+
+```tsx
+// ./Home/index.tsx
+
+// ...
+
+{
+  activeCycle ? 
+  (
+    <StopCountDownButton onClick={handleInterruptCycle} type="button">
+      <HandPalm size={24} />
+      Interromper
+    </StopCountDownButton>            
+  )
+  :
+  (
+    <StartCountDownButton disabled={isSubmitDisabled} type="submit">
+      <Play size={24} />
+      Começar
+    </StartCountDownButton> 
+  )
+}
+```
+  Agora, para interrompermos o ciclo, vamos criar mais uma propriedade, a `interruptDate`, com ela vamos marcar a data em que o ciclo foi interrompido e assim como a `startDate` vamos colocá-la como opcional.
+
+  Cria-se a função `handleInterruptCycle` dentro dela vamos usar a alteração de estado da lista de ciclos `setCycles` para percorrermos a lista atual e colocarmos a propriedade `interruptDate` no ciclo que está atualmente em contagem. Vamos estar usando o id desse ciclo para verificá-lo.
+
+```ts
+function hundleInterruptCycle() {
+  setCycles((state) => 
+    state.map((cycle) => {
+      if (cycle.id === activeCycleId) {
+        return { ...cycle, interruptDate: new Date() }
+      } else {
+        return cycle  
+      }
+    })
+  )
+  setActiveCycleId(null)
+}
+```
+  E como ocorre a interrupção do ciclo atual, setamos a variável `activeCycleId` como null, já que o ciclo vai ser parado e não terá ciclo em andamento.
+
+  ## Ciclo completo
+  Um ciclo completo é condicionado se a quantidade de segundos que se passaram for igual ou maior que a quantidade de segundos do ciclo, sendo assim, dentro do nosso `useEffect()` estaremoss verificando essa condição.
+
+  Verificar essa condição acarretará em algo que vamos precisar mais na frente na nossa página de histórico assim como na lógica atual. Como vamos ter tasks com o valor concluído no histórico, vamos colocar mais uma propriedade dentro do nosso tipo cycle com o nome de `finishedDate`.
+
+```ts
+// ./Home/index.tsx
+interface Cycle {
+  id: string,
+  task: string,
+  minutesAmount: number,
+  startDate: Date,
+  interruptDate?: Date,
+  finishedDate?: Date
+}
+```
+  E para atribuírmos o valor da propriedade opcional `finishedDate` vamos usar a mesma lógica que usamos na proprieade de interrupção.
+
+```js
+// ./Home/index.tsx
+
+// ...
+
+useEffect(() => {
+  let interval: number;
+
+  if (activeCycle) {
+    interval = setInterval(() => {
+      const secondsDifference = differenceInSeconds(
+        new Date(),
+        activeCycle.startDate
+      )
+
+      if (secondsDifference >== totalSeconds) {
+        setCycles((state) =>
+          state.map((cycle) => {
+            if (cycle.id === activeCycleId) {
+              return { ...cycle, finishedDate: new Date() }
+            } else {
+              return cycle
+            }
+          })
+        )
+        setAmountSecondsPassed(totalSeconds)
+
+        clearInterval(interval)
+      } else {
+        setAmountSecondsPassed(secondsDifference)
+      }
+      
+    }, 1000)
+  }
+
+
+  return () => {
+    clearInterval(interval)
+  }
+}, [activeCycle])
+```
+
+  Adicionado a data de término do ciclo no ciclo que foi concluído também reiniciamos o intervalo de contagem dos segundos passados, mas caso o ciclo não tenha se encerrado, apenas adicionamos os segundos de diferença ao estados dos segundos que se passaram `amountSecondsPassed`.
+
+  ## Separando componentes e Prop Drilling
+  Como podemos perceber, o nosso componente Home possui muito código e diversos componentes que poderiam ser separados em pequenos componentes e deixar a página mais limpa e com melhor controle dos componentes.
+
+  Dessa forma, nessa parte da aplicação é onde vamos separar os componentes em componentes menores.
+
+  Existem dois momentos muito importantes em que um desenvolvedor percebe que deve-se criar um componente, o primeiro deles é quando você percebe que uma mesma estrutura irá se repetir mais de duas vezes na mesma aplicação. O segundo momento é quando percebemos que existem partes de um componente maior que podem funcionar independentes do componente em que estão, o que pode deixar o código mais limpo e mais organizado.
+
+  Com isso tudo explicado, vamos separar o nosso componente `Home` em dois novos componentes, o `Countdown` e o `NewCycleForm`. Em seguida, vamos pegar todas as estruturas dentro de `./Home/index.tsx` e de `./Home/styles.ts` que correspondem a cada componente.
+
+  ![Estrutura de páginas da Home](./public/imgs/componentes-a-home.png)
+
+  Podemos passar também todas as importações. Entretando, vamos perceber uma coisa, quando passarmos todas as variáveis e funções que precisamos da Home para o Countdown e para o NewCycleForm, todas as propriedades são específicamente para comunicação entre componentes e ficam uma quantidade consideração de propriedades.
+
+  Prop-Dilling é quando temos muitas porpriedades apenas para comunicação entre componentes. Propriedades é a principal forma de comunicação entre componentes, mas não é a única. A partir do momento em que temos que passar diversas propriedades para cada componente, o projeto fica repetitivo.
+
+  A Context API permite compartilharmos informações com vários componentes ao mesmo tempo, ela que vamos utilizar para fazer essa comunicação com todos os componentes dessa aplicação.
+
+
+
+
   # Contexto no React
   Página exemplo para entender como funciona o Context no React:
+  
 
 ```js
 import { useContext, createContext, useState } from 'react';
@@ -767,7 +1131,6 @@ function NewCycleForm() {
       >
         Mudar Context
       </button>
-
     </div>
       
   )
@@ -795,3 +1158,4 @@ export function Home() {
   )
 }
 ```
+

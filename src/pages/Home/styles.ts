@@ -16,7 +16,7 @@ export const HomeContainer = styled.main`
   }
 `;
 
-export const BaseCountDownButton = styled.button`
+const BaseCountDownButton = styled.button`
   width: 100%;
   border: 0;
   border-radius: 8px;
